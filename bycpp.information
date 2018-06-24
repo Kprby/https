@@ -1,0 +1,15 @@
+ID: 11342640
+API Key: K6fmVrRhDjfYDg4XhwQrpEXO
+Secret Key: yVO0CAxTLRSMxa9E2lOTvrVQB8ueuzMj
+URL: http://developer.baidu.com/console#app/11342640
+
+access_token获取方法：
+在浏览器输入
+https://openapi.baidu.com/oauth/2.0/authorize?scope=basic+netdisk&redirect_uri=oob&response_type=code&client_id=K6fmVrRhDjfYDg4XhwQrpEXO
+
+https://openapi.baidu.com/oauth/2.0/token?grant_type=authorization_code&code=7209f978ddda424f1ff32315ec22c1a7&client_id=K6fmVrRhDjfYDg4XhwQrpEXO&client_secret=yVO0CAxTLRSMxa9E2lOTvrVQB8ueuzMj&redirect_uri=oob
+
+https://d.pcs.baidu.com/rest/2.0/pcs/file?method=download&access_token=21.d9e26d3482853aef02b31282aa261349.2592000.1530715699.3211218366-11342640&path=%2Fapp%2Fbycpp%2F1.txt
+
+https://pcs.baidu.com/rest/2.0/pcs/quota?access_token=21.27f1617b91f9d5c76901a5abb2e5bff9.2592000.1530886314.3211218366-11342640&method=info
+
