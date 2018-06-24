@@ -14,6 +14,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <string>
+#include <iostream>
 #include "ssl_client.h"
 
 // Simple structure to keep track of the handle, and
@@ -179,7 +180,14 @@ int main (int argc, char **argv)
     sslDisconnect (c);*/
 
     ssl_client c;
-    c.connect("www.baidu.com", "https");
+    int ret = 0;
+    std::string buf;
+    ret = c.connect("www.baidu.com", "https");
+    ret = c.write("GET https://www.baidu.com/"
+            " HTTP/1.1\r\n\r\n");
+    ret = c.read(buf);
+    c.disconnect();
+    std::cout << buf << std::endl;
 
     return 0;
 }

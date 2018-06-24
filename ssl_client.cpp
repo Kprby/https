@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -20,7 +21,7 @@ ssl_client::ssl_client()
 
 ssl_client::~ssl_client()
 {
-
+    clear();
 }
 
 int ssl_client::connect(const char *node, const char *service)
@@ -39,7 +40,7 @@ int ssl_client::connect(const char *node, const char *service)
     {
         freeaddrinfo(ai_head);
         if (EAI_SYSTEM != ecode)
-            printf("getaddrinfo(): %s\n", gai_strerror(ecode));
+            fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(ecode));
         else
         {
             ecode = errno;
@@ -102,6 +103,8 @@ int ssl_client::connect(const char *node, const char *service)
         goto ssl_error;
     }
 
+    SSL_set_mode(_ssl, SSL_get_mode(_ssl) | SSL_MODE_AUTO_RETRY);
+
     // Initiate SSL handshake
     ret = SSL_connect(_ssl);
     if (ret != 1)
@@ -118,9 +121,31 @@ ssl_error:
     return ecode;
 }
 
-int ssl_client::disconnect()
+void ssl_client::disconnect()
 {
+    SSL_shutdown(_ssl);
+    clear();
+}
 
+int ssl_client::read(std::string &buf, int num)
+{
+    assert(num > 0);
+
+    int ret = 0;
+    buf.resize(num);
+    ret = SSL_read(_ssl, &buf[0], num);
+    if (ret <= 0)
+        ERR_print_errors_fp(stderr);
+    return ret;
+}
+
+int ssl_client::write(const std::string &buf)
+{
+    int ret = 0;
+    ret = SSL_write(_ssl, buf.data(), buf.size());
+    if (ret <= 0)
+        ERR_print_errors_fp(stderr);
+    return ret;
 }
 
 void ssl_client::clear()
@@ -136,4 +161,14 @@ void ssl_client::clear()
         close(_tcp_sfd);
         _tcp_sfd = -1;
     }
+}
+
+bool ssl_client::retryable(int ret_code)
+{
+    int ecode = 0;
+    ecode = SSL_get_error(_ssl, ret_code);
+    if (ecode == SSL_ERROR_WANT_READ || ecode == SSL_ERROR_WANT_WRITE)
+        return true;
+    else
+        return false;
 }
