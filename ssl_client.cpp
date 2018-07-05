@@ -21,11 +21,14 @@ ssl_client::ssl_client()
 
 ssl_client::~ssl_client()
 {
-    clear();
+    disconnect();
 }
 
 int ssl_client::connect(const char *node, const char *service)
 {
+    if (connected())
+        return -1;
+
     int ecode = 0;
     int sfd = -1;
     int ret = 0;
@@ -123,8 +126,11 @@ ssl_error:
 
 void ssl_client::disconnect()
 {
-    SSL_shutdown(_ssl);
-    clear();
+    if (connected())
+    {
+        SSL_shutdown(_ssl);
+        clear();
+    }
 }
 
 int ssl_client::read(std::string &buf, int num)
@@ -139,10 +145,30 @@ int ssl_client::read(std::string &buf, int num)
     return ret;
 }
 
+int ssl_client::read(void *buf, int num)
+{
+    assert(num > 0);
+
+    int ret = 0;
+    ret = SSL_read(_ssl, buf, num);
+    if (ret <= 0)
+        ERR_print_errors_fp(stderr);
+    return ret;
+}
+
 int ssl_client::write(const std::string &buf)
 {
     int ret = 0;
     ret = SSL_write(_ssl, buf.data(), buf.size());
+    if (ret <= 0)
+        ERR_print_errors_fp(stderr);
+    return ret;
+}
+
+int ssl_client::write(void *buf, int num)
+{
+    int ret = 0;
+    ret = SSL_write(_ssl, buf, num);
     if (ret <= 0)
         ERR_print_errors_fp(stderr);
     return ret;
@@ -161,14 +187,4 @@ void ssl_client::clear()
         close(_tcp_sfd);
         _tcp_sfd = -1;
     }
-}
-
-bool ssl_client::retryable(int ret_code)
-{
-    int ecode = 0;
-    ecode = SSL_get_error(_ssl, ret_code);
-    if (ecode == SSL_ERROR_WANT_READ || ecode == SSL_ERROR_WANT_WRITE)
-        return true;
-    else
-        return false;
 }

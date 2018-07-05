@@ -1,5 +1,4 @@
-#ifndef SSL_CLIENT_H
-#define SSL_CLIENT_H
+#pragma once
 
 #include <openssl/ssl.h>
 #include <stdint.h>
@@ -11,11 +10,17 @@ public:
     ssl_client();
     ~ssl_client();
 
+    //成功返回0
     int connect(const char *node, const char *service);
     void disconnect();
+    bool connected()
+    {
+        return static_cast<bool>(_ssl);
+    }
 
     /*SSLv3 / TLSv1的最大记录大小为16kB*/
     int read(std::string &buf, int num = 16 * 1024);
+    int read(void *buf, int num = 16 * 1024);
 
     /*The following return values can occur:
 
@@ -33,14 +38,12 @@ public:
     and that -1 was retryable.
     You should instead call SSL_get_error() to find out if it's retryable.*/
     int write(const std::string &buf);
+    int write(void *buf, int num);
 
 private:
     void clear();
-    bool retryable(int ret_code);
 
     int _tcp_sfd = -1;
     SSL *_ssl = nullptr;
     SSL_CTX *_ssl_ctx = nullptr;
 };
-
-#endif // SSL_CLIENT_H
