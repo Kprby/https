@@ -1,11 +1,10 @@
 #include "ssl_client_buf.h"
 
-ssl_client_buf::ssl_client_buf(const char *node, const char *service)
-    : _input_buffer(new char[_buffer_size])
-    , _output_buffer(new char[_buffer_size])
+ssl_client_buf::ssl_client_buf()
+    : _input_buffer(new char[ssl_max_record_size])
+    , _output_buffer(new char[ssl_max_record_size])
 {
-    if (_ssl_client.connect(node, service) == 0)
-        setp(_output_buffer, _output_buffer + _buffer_size);
+
 }
 
 ssl_client_buf::~ssl_client_buf()
@@ -14,11 +13,29 @@ ssl_client_buf::~ssl_client_buf()
     delete[] _output_buffer;
 }
 
+int ssl_client_buf::connect(const char *node, const char *service)
+{
+    setg(nullptr, nullptr, nullptr);
+    int ret = _ssl_client.connect(node, service);
+    if (ret == 0)
+        setp(_output_buffer, _output_buffer + ssl_max_record_size);
+    else
+        setp(nullptr, nullptr);
+    return ret;
+}
+
+void ssl_client_buf::disconnect()
+{
+    _ssl_client.disconnect();
+    setg(nullptr, nullptr, nullptr);
+    setp(nullptr, nullptr);
+}
+
 std::streambuf::int_type ssl_client_buf::underflow()
 {
     int ret = 0;
     if (_ssl_client.connected())
-        ret = _ssl_client.read(_input_buffer, _buffer_size);
+        ret = _ssl_client.read(_input_buffer, ssl_max_record_size);
 
     if (ret > 0)
     {
@@ -52,7 +69,7 @@ int ssl_client_buf::sync()
 
     if (ret > 0)
     {
-        setp(_output_buffer, _output_buffer + _buffer_size);
+        setp(_output_buffer, _output_buffer + ssl_max_record_size);
         return 0;
     }
     else

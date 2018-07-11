@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string>
 
+constexpr int ssl_max_record_size = 16 * 1024;
+
 class ssl_client
 {
 public:
@@ -19,8 +21,8 @@ public:
     }
 
     /*SSLv3 / TLSv1的最大记录大小为16kB*/
-    int read(std::string &buf, int num = 16 * 1024);
-    int read(void *buf, int num = 16 * 1024);
+    int read(std::string &buf, int num = ssl_max_record_size);
+    int read(void *buf, int num = ssl_max_record_size);
 
     /*The following return values can occur:
 
